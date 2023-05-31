@@ -20,6 +20,5 @@ spec:
         ports:
         - containerPort: {{ .Values.mysql.port }}
         envFrom:
-        - configMapRef:
-          name: {{ .Values.mysql.appname }}-cm
-    restartPolicy: Never
+          - configMapRef:
+              name: {{ .Values.mysql.appname }}-cm
