@@ -1,1 +1,64 @@
+def branch = env.BRANCH_NAME
+def build = env.BUILD_NUMBER
+def DEBUG = true
+def appname ="helloworld"
+def DEPLOY = false
+def artifactory = "myrepo.domain.com/eylab-tools//"
+def repo = "eylab"
+def appimage = "${artifactory}/${repo}/${appname}"
+def apptag = "${build}"
+def kuernetesurl = ""
+
+if (branch == "dev"){
+echo "----------  dev   -------"
+kubernetesurl = "https://kubernetes.default.svc"
+} else if  (branch == "qa"){
+echo "----------  qa   -------"
+} else if  (branch == "master"){
+echo "----------  master   -------"
+} else {
+
+}
+
+
+podTemplate(containers: [
+      containerTemplate(name: 'jnlp', image: 'jenkins/inbound-agent', ttyEnabled: true),
+ containerTemplate(name: 'docker', image: 'busybox:latest', ttyEnabled: true)
+  ],
+  volumes: [
+     
+  ]) {
+    node(POD_LABEL) {
+        stage('chackout') {
+            container('jnlp') {
+sh '/usr/bin/git config --global http.sslVerify false'
+checkout scm
+            }
+        } // end chackout
+
+        stage('build') {
+            container('docker') {
+              echo "Building docker image..."
+              sh "echo docker build -t $appimage --no-cache ."
+              sh "echo docker login $artifactory -u admin -p password"
+              sh "echo docker push $appimage"
+
+            }
+        } //end build
+
+        stage('deploy') {
+            container('docker') {
+if (DEPLOY) {
+              sh "sed -i 's/APPNAME/$appname/'  k8s/deployment.yaml"
+              sh "sed -i 's/APPIMAGE/$appimage/'  k8s/deployment.yaml"
+              sh "sed -i 's/APPTAG/$apptag/'  k8s/deployment.yaml"
+              echo 'Content of temt.txt file after running sed command...'
+              sh 'cat  k8s/deployment.yaml'
+} else {
+echo "***** NO DEPLOY - TEST *********"
+}
+            }
+        } //end deploy
+    }
+}
 
