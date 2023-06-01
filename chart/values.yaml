@@ -1,6 +1,6 @@
 web:
   appname: spring-petclinic
-  repo: 
+  repo: sunkey12
   image: spring-petclinic
   tag: latest
   port: 8080
